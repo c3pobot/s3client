@@ -1,5 +1,4 @@
 'use strict'
-const S3_BUCKET = process.env.S3_BUCKET
 const { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
 const s3 = new S3Client({
     endpoint: process.env.AWS_ENDPOINT, // e.g. https://eu2.contabostorage.com/bucketname
@@ -11,8 +10,8 @@ const s3 = new S3Client({
 
 module.exports.list = async(prefix, bucket)=>{
   try{
-    if(!key || !data || (bucket && S3_BUCKET)) return
-    let payload = { Bucket: bucket || S3_BUCKET }
+    if(!bucket) return
+    let payload = { Bucket: bucket }
     if(prefix) payload.Prefix = prefix+'/'
     let command = new ListObjectsV2Command(payload)
     let obj = await s3.send(command)
@@ -23,8 +22,8 @@ module.exports.list = async(prefix, bucket)=>{
 }
 module.exports.put = async(key, data, bucket)=>{
   try{
-    if(!key || !data || (bucket && S3_BUCKET)) return
-    let payload = { Key: key, Bucket: bucket || S3_BUCKET, Body: data }
+    if(!key || !data || !bucket) return
+    let payload = { Key: key, Bucket: bucket, Body: data }
     if(key.endsWith('.json')){
       payload.Body = JSON.stringify(data)
       payload.ContentType = 'application/json'
@@ -37,14 +36,16 @@ module.exports.put = async(key, data, bucket)=>{
     let obj = await s3.send(command)
     if(obj?.ETag) return true
   }catch(e){
-    throw('Error uploading '+key+' to bucket '+(bucket || S3_BUCKET)+'...')
+    throw('Error uploading '+key+' to bucket '+bucket+'...')
   }
 }
 module.exports.get = async(key, bucket)=>{
   try{
-    if(!key || (bucket && S3_BUCKET)) return
-    let img, str
-    let command = new GetObjectCommand({ Key: key, Bucket: bucket || S3_BUCKET})
+    if(!key || !bucket) return
+    let img, str, payload = { Key: key, Bucket: bucket}
+    if(key.endsWith('.json')) payload.ResponseContentType = 'application/json'
+    if(key.endsWith('.png')) payload.ResponseContentType = 'image/png'
+    let command = new GetObjectCommand({ Key: key, Bucket: bucket})
     let obj = await s3.send(command)
     if(obj?.Body){
       if(key.endsWith('.json')){
@@ -55,6 +56,6 @@ module.exports.get = async(key, bucket)=>{
       return (new Buffer.from(img))
     }
   }catch(e){
-    throw('Error getting key '+key+' from bucket '+(bucket || S3_BUCKET)+'...')
+    throw('Error getting key '+key+' from bucket '+bucket+'...')
   }
 }

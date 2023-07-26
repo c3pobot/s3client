@@ -8,7 +8,7 @@ const s3 = new S3Client({
     forcePathStyle : true
 });
 
-module.exports.list = async(prefix, bucket)=>{
+module.exports.list = async(bucket, prefix)=>{
   try{
     if(!bucket) return
     let payload = { Bucket: bucket }
@@ -20,7 +20,7 @@ module.exports.list = async(prefix, bucket)=>{
     throw(e)
   }
 }
-module.exports.put = async(key, data, bucket)=>{
+module.exports.put = async(bucket, key, data)=>{
   try{
     if(!key || !data || !bucket) return
     let payload = { Key: key, Bucket: bucket, Body: data }
@@ -39,7 +39,7 @@ module.exports.put = async(key, data, bucket)=>{
     throw('Error uploading '+key+' to bucket '+bucket+'...')
   }
 }
-module.exports.get = async(key, bucket)=>{
+module.exports.get = async(bucket, key)=>{
   try{
     if(!key || !bucket) return
     let img, str, payload = { Key: key, Bucket: bucket}

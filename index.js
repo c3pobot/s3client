@@ -1,5 +1,5 @@
 'use strict'
-const { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
+const { S3Client, DeleteObjectCommand, ListObjectsV2Command, GetObjectCommand, PutObjectCommand } = require("@aws-sdk/client-s3");
 const s3 = new S3Client({
     endpoint: process.env.AWS_ENDPOINT, // e.g. https://eu2.contabostorage.com/bucketname
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -23,7 +23,7 @@ module.exports.list = async(bucket, prefix)=>{
 module.exports.put = async(bucket, key, data)=>{
   try{
     if(!key || !data || !bucket) return
-    let payload = { Key: key, Bucket: bucket, Body: data }
+    let payload = { Key: key, Bucket: bucket, Body: data, CacheControl: "no-store, no-cache, max-age=0" }
     if(key.endsWith('.json')){
       payload.Body = JSON.stringify(data)
       payload.ContentType = 'application/json'
@@ -57,5 +57,16 @@ module.exports.get = async(bucket, key)=>{
     }
   }catch(e){
     throw('Error getting key '+key+' from bucket '+bucket+'...')
+  }
+}
+module.exports.delete = async(bucket, key)=>{
+  try{
+    if(!key || !bucket) return
+    let payload = { Key: key, Bucket: bucket }
+    let command = new DeleteObjectCommand(payload)
+    let obj = await s3.send(command)
+    console.log(obj)
+  }catch(e){
+    throw(e)
   }
 }
